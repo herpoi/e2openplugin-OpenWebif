@@ -37,6 +37,9 @@ msgstr "Włącz dostęp przez https"
 msgid "Https port"
 msgstr "Port https"
 
+msgid "Enable Authentication for streaming"
+msgstr "Włącz uwierzytelnianie dla strumieniowania"
+
 msgid "Smart services renaming for XBMC"
 msgstr "Zmiana nazw kanałów dla XBMC"
 
@@ -227,7 +230,7 @@ msgid "Current Event"
 msgstr "Aktualne wydarzenie"
 
 msgid "Deep-Standby"
-msgstr "Głebokie uśpienie"
+msgstr "Głębokie uśpienie"
 
 msgid "Default"
 msgstr "Domyślny"
