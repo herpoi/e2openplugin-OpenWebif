@@ -22,6 +22,8 @@ from models.config import getCollapsedMenus, getRemoteGrabScreenshot, getZapStre
 import imp
 import sys
 import json
+import gzip
+import cStringIO
 
 class BaseController(resource.Resource):
 	isLeaf = False
@@ -33,6 +35,7 @@ class BaseController(resource.Resource):
 		self.withMainTemplate = False
 		self.isJson = False
 		self.isCustom = False
+		self.isGZ = False
 	
 	def error404(self, request):
 		request.setHeader("content-type", "text/html")
@@ -55,6 +58,13 @@ class BaseController(resource.Resource):
 		
 	def getChild(self, path, request):
 		return self.__class__(self.session, path)
+		
+	def compressBuf(self, buf):
+		zbuf = cStringIO.StringIO()
+		zfile = gzip.GzipFile(mode = 'wb',  fileobj = zbuf, compresslevel = 6)
+		zfile.write(buf)
+		zfile.close()
+		return zbuf.getvalue()
 		
 	def render(self, request):
 		# cache data
@@ -79,28 +89,35 @@ class BaseController(resource.Resource):
 				
 			data = func(request)
 			if data is None:
-				if not self.suppresslog:
-					print "[OpenWebif] page '%s' without content" % request.uri
+#				if not self.suppresslog:
+#					print "[OpenWebif] page '%s' without content" % request.uri
 				self.error404(request)
 			elif self.isCustom:
-				if not self.suppresslog:
-					print "[OpenWebif] page '%s' ok (custom)" % request.uri
+#				if not self.suppresslog:
+#					print "[OpenWebif] page '%s' ok (custom)" % request.uri
 				request.write(data)
 				request.finish()
 			elif self.isJson:
-				if not self.suppresslog:
-					print "[OpenWebif] page '%s' ok (json)" % request.uri
-				request.setHeader("content-type", "text/plain")
-				request.write(json.dumps(data))
+#				if not self.suppresslog:
+#					print "[OpenWebif] page '%s' ok (json)" % request.uri
+#	TODO: Discuss to use GZIP for all requests if the browser accepts gzip encoding
+				if self.isGZ:
+					compstr = self.compressBuf(json.dumps(data))
+					request.setHeader('Content-Encoding', 'gzip')
+					request.setHeader('Content-Length', '%d' % len(compstr))
+					request.write(compstr)
+				else:
+					request.setHeader("content-type", "text/plain")
+					request.write(json.dumps(data))
 				request.finish()
 			elif type(data) is str:
-				if not self.suppresslog:
-					print "[OpenWebif] page '%s' ok (simple string)" % request.uri
+#				if not self.suppresslog:
+#					print "[OpenWebif] page '%s' ok (simple string)" % request.uri
 				request.setHeader("content-type", "text/plain")
 				request.write(data)
 				request.finish()
 			else:
-				print "[OpenWebif] page '%s' ok (cheetah template)" % request.uri
+#				print "[OpenWebif] page '%s' ok (cheetah template)" % request.uri
 				module = request.path
 				if module[-1] == "/":
 					module += "index"
@@ -141,50 +158,12 @@ class BaseController(resource.Resource):
 		ret['configsections'] = getConfigsSections()['sections']
 		ret['zapstream'] = getZapStream()['zapstream']
 		ret['box'] = "dmm"
-		if open("/proc/stb/info/model",'r').read().strip().lower() == "gigablue":
-			ret['box'] = "gigablue"
-		if fileExists("/proc/stb/info/boxtype"):
-			ret['box'] = open("/proc/stb/info/boxtype").read().strip().lower()
-		elif fileExists("/proc/stb/info/vumodel"):
-			ret['box'] = open("/proc/stb/info/vumodel").read().strip().lower()
-		elif fileExists("/proc/stb/info/azmodel"):
+		if fileExists("/proc/stb/info/model"):
 			ret['box'] = open("/proc/stb/info/model").read().strip().lower()
 		elif fileExists("/proc/stb/info/model"):
 			ret['box'] = open("/proc/stb/info/model").read().strip().lower()
 			
-		if ret["box"] in ("solo", "duo", "uno", "solo2", "duo2"):
-			ret["remote"] = "vu_normal"
-		elif ret["box"] == "ultimo":
-			ret["remote"] = "vu_ultimo"
-		elif ret["box"] in ("et9x00", "et9000", "et9200", "et9500"):
-			ret["remote"] = "et9x00"
-		elif ret["box"] in ("et5x00", "et5000", "et6x00", "et6000"):
-			ret["remote"] = "et5x00"
-		elif ret["box"] in ("et4x00", "et4000"):
-			ret["remote"] = "et4x00"
-		elif ret["box"] == "gigablue":
-			ret["remote"] = "gigablue"
-		elif ret["box"] == "et6500":
-			ret["remote"] = "et6500"
-		elif ret["box"] in ("et8x00", "et8000", "et1x000", "et10000"):
-			ret["remote"] = "et8000"
-		elif ret["box"] in ("me", "minime"):
-			ret["remote"] = "me"
-		elif ret["box"] in ("premium", "premium+"):
-			ret["remote"] = "premium"
-		elif ret["box"] in ("elite", "ultra"):
-			ret["remote"] = "elite"
-		elif ret["box"] in ("ini-1000", "ini-1000ru"):
-			ret["remote"] = "ini-1000"
-		elif ret["box"] in ("ini-1000sv", "ini-5000sv"):
-			ret["remote"] = "miraclebox"
-		elif ret["box"] == "ini-3000":
-			ret["remote"] = "ini-3000"
-		elif ret["box"] in ("ini-7012", "ini-7000", "ini-5000", "ini-5000ru"):
-			ret["remote"] = "ini-7000"
-		elif ret["box"] == "xp1000":
-			ret["remote"] = "xp1000"
-		elif ret["box"] in ("nbox", "esi88", "adb2850", "adb2849", "dsi87"):
+		if ret["box"] in ("nbox", "esi88", "adb2850", "adb2849", "dsi87"):
 			ret["remote"] = "nbox"
 		else:
 			ret["remote"] = "dmm"

@@ -24,19 +24,25 @@ msgstr ""
 msgid "OpenWebInterface Enabled"
 msgstr ""
 
-msgid "Http port"
+msgid "HTTP port"
 msgstr ""
 
-msgid "Enable Http Authentication"
+msgid "Enable HTTP Authentication"
 msgstr ""
 
-msgid "Enable Https"
+msgid "Enable HTTPS"
 msgstr ""
 
-msgid "Https port"
+msgid "HTTPS port"
+msgstr ""
+
+msgid "Require client cert for HTTPS"
 msgstr ""
 
 msgid "Enable Authentication for streaming"
+msgstr ""
+
+msgid "Disable access for user root"
 msgstr ""
 
 msgid "Smart services renaming for XBMC"
@@ -337,6 +343,9 @@ msgid "Hour"
 msgstr ""
 
 msgid "IP address"
+msgstr ""
+
+msgid "IPv6 address(es)"
 msgstr ""
 
 msgid "Infos"

@@ -25,20 +25,26 @@ msgstr "Adres OpenWebif:  http://ip_tunera:port"
 msgid "OpenWebInterface Enabled"
 msgstr "Interfejs OpenWebif włączony"
 
-msgid "Http port"
-msgstr "Port http"
+msgid "HTTP port"
+msgstr "Port HTTP"
 
-msgid "Enable Http Authentication"
-msgstr "Włącz uwierzytelnianie http"
+msgid "Enable HTTP Authentication"
+msgstr "Włącz uwierzytelnianie HTTP"
 
-msgid "Enable Https"
-msgstr "Włącz dostęp przez https"
+msgid "Enable HTTPS"
+msgstr "Włącz dostęp przez HTTPS"
 
-msgid "Https port"
-msgstr "Port https"
+msgid "HTTPS port"
+msgstr "Port HTTPS"
+
+msgid "Require client cert for HTTPS"
+msgstr "Wymagaj certyfikatu klienta dla HTTPS"
 
 msgid "Enable Authentication for streaming"
 msgstr "Włącz uwierzytelnianie dla strumieniowania"
+
+msgid "Disable access for user root"
+msgstr "Zablokuj dostęp dla użytkownika root"
 
 msgid "Smart services renaming for XBMC"
 msgstr "Zmiana nazw kanałów dla XBMC"
@@ -339,6 +345,9 @@ msgstr "Godzina"
 
 msgid "IP address"
 msgstr "Adres IP"
+
+msgid "IPv6 address(es)"
+msgstr "Adres(y) IPv6"
 
 msgid "Infos"
 msgstr "Informacje"
@@ -689,6 +698,3 @@ msgstr "W"
 
 msgid "E"
 msgstr "E"
-
-msgid "Remote Control"
-msgstr "Pilot"

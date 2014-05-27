@@ -23,13 +23,17 @@ Section: extra
 Priority: optional
 Maintainer: E2OpenPlugins members
 Homepage: https://github.com/E2OpenPlugins/e2openplugin-OpenWebif
-Depends: python-json, python-cheetah, python-pyopenssl, python-unixadmin, python-misc, python-twisted-web, python-pprint
+Depends: python-json, python-cheetah, python-pyopenssl, python-unixadmin, python-misc, python-twisted-web, python-pprint, python-compression
 Source: https://github.com/E2OpenPlugins/e2openplugin-OpenWebif
 EOF
 
 mkdir -p ${P}/usr/lib/enigma2/python/Plugins/Extensions/OpenWebif/
 cp -rp ${D}/plugin/* ${P}/usr/lib/enigma2/python/Plugins/Extensions/OpenWebif/
-cp -rp ${D}/locale ${P}/usr/lib/enigma2/python/Plugins/Extensions/OpenWebif/
+for f in $(find ./locale -name *.po ); do
+	l=$(echo ${f%} | sed 's/\.po//' | sed 's/.*locale\///')
+	mkdir -p ${P}/usr/lib/enigma2/python/Plugins/Extensions/OpenWebif/locale/${l%}/LC_MESSAGES
+	msgfmt -o ${P}/usr/lib/enigma2/python/Plugins/Extensions/OpenWebif/locale/${l%}/LC_MESSAGES/OpenWebif.mo ./locale/$l.po
+done
 
 tar -C ${P} -czf ${B}/data.tar.gz . --exclude=CONTROL
 tar -C ${P}/CONTROL -czf ${B}/control.tar.gz .

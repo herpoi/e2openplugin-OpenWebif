@@ -19,6 +19,8 @@ from Screens.Standby import inStandby
 from Tools.Directories import fileExists, pathExists
 from time import time, localtime, strftime
 from enigma import eDVBVolumecontrol, eServiceCenter, eServiceReference
+from twisted.web import version
+from socket import has_ipv6, AF_INET6, inet_ntop, inet_pton
 
 import NavigationInstance
 
@@ -26,10 +28,57 @@ import os
 import sys
 import time
 
-OPENWEBIFVER = "OWIF 0.2.7"
+OPENWEBIFVER = "OWIF 0.2.9"
 
 def getOpenWebifVer():
 	return OPENWEBIFVER
+
+def normalize_ipv6(orig):
+	net = []
+
+	if '/' in orig:
+		net = orig.split('/')
+		if net[1] == "128":
+			del net[1]
+	else:
+		net.append(orig)
+
+	addr = net[0]
+
+	addr = inet_ntop(AF_INET6, inet_pton(AF_INET6, addr))
+
+	if len(net) == 2:
+		addr += "/" + net[1]
+
+	return (addr)
+
+def getAdapterIPv6(ifname):
+	addr = ""
+
+	if has_ipv6 and fileExists('/proc/net/if_inet6') and version.major >= 12:
+		proc = '/proc/net/if_inet6'
+		tempaddrs = []
+		for line in file(proc).readlines():
+			if line.startswith('fe80'):
+				continue
+
+			tmpaddr = ""
+			tmp = line.split()
+			if ifname == tmp[5]:
+				tmpaddr = ":".join([ tmp[0][i:i+4] for i in range(0,len(tmp[0]),4) ])
+
+				if tmp[2].lower() != "ff":
+					tmpaddr = "%s/%s" % (tmpaddr, int(tmp[2].lower(), 16))
+
+				tempaddrs.append(normalize_ipv6(tmpaddr))
+
+		if len(tempaddrs) > 1:
+				tempaddrs.sort()
+				addr = ', '.join(tempaddrs)
+		elif tempaddrs == 1:
+				addr = tempaddrs[0]
+
+	return (addr)
 
 def formatIp(ip):
 	if ip is None or len(ip) != 4:
@@ -42,13 +91,13 @@ def getBasePath():
 	chunks.pop()
 	chunks.pop()
 	return "/".join(chunks)
-	
+
 def getPublicPath(file = ""):
 	return getBasePath() + "/public/" + file
-	
+
 def getViewsPath(file = ""):
 	return getBasePath() + "/controllers/views/" + file
-	
+
 def getPiconPath():
 	if pathExists("/media/usb/picon/"):
 		return "/media/usb/picon/"
@@ -62,52 +111,32 @@ def getPiconPath():
 		return "/picon/"
 	else:
 		return ""
-	
+
 def getInfo():
 	# TODO: get webif versione somewhere!
 	info = {}
 
-	brand = "Dream Multimedia"
+	brand = "unknown"
 	model = "unknown"
 	chipset = "unknown"
-	
-	if fileExists("/proc/stb/info/boxtype"):
-		brand = "Xtrend"
-		f = open("/proc/stb/info/boxtype",'r')
-		model = f.readline().strip().lower()
- 		if model.startswith("et"):
-		    brand = "Xtrend"
-		elif model.startswith("ini"):
-			if model.endswith("sv"):
-				brand = "MiracleBox"
-			elif model.endswith("ru"):
-				brand = "Sezam"
-			else:
-				brand = "Venton"
-		elif model.startswith("xp"):
-		    brand = "MaxDigital"
- 		f.close()
-	elif fileExists("/proc/stb/info/vumodel"):
-		brand = "VuPlus"
-		f = open("/proc/stb/info/vumodel",'r')
- 		model = f.readline().strip().lower()
- 		f.close()
-	elif fileExists("/proc/stb/info/azmodel"):
-		brand = "AZBox"
+
+	if fileExists("/proc/stb/info/model"):
 		f = open("/proc/stb/info/model",'r')
  		model = f.readline().strip().lower()
  		f.close()
- 		if model == "me":
-			chipset = "SIGMA 8655"
- 		elif model == "minime":
-			chipset = "SIGMA 8653"
- 		else:
-			chipset = "SIGMA 8634"
-	else:
-		f = open("/proc/stb/info/model",'r')
- 		model = f.readline().strip().lower()
- 		f.close()
-		
+	 	if model == "nbox":
+			brand = "Advanced Digital Broadcast"
+ 			chipset = "SH4 @266MHz"
+	 	elif model in ("adb2850", "adb2849"):
+			brand = "Advanced Digital Broadcast"
+ 			chipset = "SH4 @450MHz"
+	 	elif model in ("esi88", "uhd88", "dsi87"):
+			brand = "SagemCom"
+ 			chipset = "SH4 @450MHz"
+
+	info['brand'] = brand
+	info['model'] = model
+
 	if fileExists("/proc/stb/info/chipset"):
 		f = open("/proc/stb/info/chipset",'r')
  		chipset = f.readline().strip()
@@ -137,7 +166,7 @@ def getInfo():
 	info['brand'] = brand
 	info['model'] = model
 	info['chipset'] = chipset
-	
+
 	memFree = 0
 	for line in open("/proc/meminfo",'r'):
 	 	parts = line.split(':')
@@ -147,7 +176,7 @@ def getInfo():
 		elif key in ("MemFree", "Buffers", "Cached"):
 			memFree += int(parts[1].strip().split(' ',1)[0])
 	info['mem2'] = "%s kB" % memFree
-		
+
 	try:
 		f = open("/proc/uptime", "rb")
 		uptime = int(float(f.readline().split(' ', 2)[0].strip()))
@@ -161,7 +190,7 @@ def getInfo():
 	except:
 		uptimetext = "?"
 	info['uptime'] = uptimetext
-		
+
 	if fileExists("/etc/bhversion"):
 		f = open("/etc/bhversion",'r')
 		imagever = f.readline().strip()
@@ -172,7 +201,7 @@ def getInfo():
 		f.close()
 	else:
 		imagever = about.getImageVersionString()
-		
+
 	info["webifver"] = getOpenWebifVer()
 	info['imagever'] = imagever
 	info['enigmaver'] = about.getEnigmaVersionString()
@@ -184,7 +213,7 @@ def getInfo():
 		from Tools.DreamboxHardware import getFPVersion
 
 	info['fp_version'] = getFPVersion()
-	
+
 	info['tuners'] = []
 	for i in range(0, nimmanager.getSlotCount()):
 		info['tuners'].append({
@@ -201,9 +230,10 @@ def getInfo():
 			"dhcp": iNetwork.getAdapterAttribute(iface, "dhcp"),
 			"ip": formatIp(iNetwork.getAdapterAttribute(iface, "ip")),
 			"mask": formatIp(iNetwork.getAdapterAttribute(iface, "netmask")),
-			"gw": formatIp(iNetwork.getAdapterAttribute(iface, "gateway"))
+			"gw": formatIp(iNetwork.getAdapterAttribute(iface, "gateway")),
+			"ipv6": getAdapterIPv6(iface)
 		})
-			
+
 	info['hdd'] = []
 	for hdd in harddiskmanager.hdd:
 		if hdd.free() <= 1024:
@@ -226,17 +256,17 @@ def getFrontendStatus(session):
 	inf['snr_db'] = ""
 	inf['agc'] = ""
 	inf['ber'] = ""
-	
+
 	service = session.nav.getCurrentService()
 	if service is None:
 		return inf
 	feinfo = service.frontendInfo()
 	frontendData = feinfo and feinfo.getAll(True)
-	
+
 	if frontendData is not None:
 		inf['tunertype'] = frontendData.get("tuner_type", "UNKNOWN")
 		inf['tunernumber'] = frontendData.get("tuner_number")
-		
+
 	frontendStatus = feinfo and feinfo.getFrontendStatus()
 	if frontendStatus is not None:
 		percent = frontendStatus.get("tuner_signal_quality")
@@ -267,7 +297,7 @@ def getStatusInfo(self):
 
 	# Get Current Volume and Mute Status
 	vcontrol = eDVBVolumecontrol.getInstance()
-	
+
 	statusinfo['volume'] = vcontrol.getVolume()
 	statusinfo['muted'] = vcontrol.isMuted()
 
@@ -277,7 +307,7 @@ def getStatusInfo(self):
 	if serviceref is not None:
 		serviceHandler = eServiceCenter.getInstance()
 		serviceHandlerInfo = serviceHandler.info(serviceref)
-	
+
 		service = self.session.nav.getCurrentService()
 		serviceinfo = service and service.info()
 		event = serviceinfo and serviceinfo.getEvent(0)
@@ -302,7 +332,7 @@ def getStatusInfo(self):
 		if serviceref:
 			statusinfo['currservice_serviceref'] = serviceref.toString()
 			statusinfo['currservice_station'] = serviceHandlerInfo.getName(serviceref).replace('\xc2\x86', '').replace('\xc2\x87', '')
-		
+	
 	# Get Standby State
 	from Screens.Standby import inStandby
 	if inStandby == None:
@@ -335,4 +365,3 @@ def GetWithAlternative(service,onlyFirst = True):
 		return service
 	else:
 		return None
-
