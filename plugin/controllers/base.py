@@ -158,7 +158,7 @@ class BaseController(resource.Resource):
 		ret['configsections'] = getConfigsSections()['sections']
 		ret['zapstream'] = getZapStream()['zapstream']
 		ret['box'] = "dmm"
-		elif fileExists("/proc/stb/info/model"):
+		if fileExists("/proc/stb/info/model"):
 			ret['box'] = open("/proc/stb/info/model").read().strip().lower()
 			
 		if ret["box"] in ("nbox", "esi88", "adb2850", "adb2849", "dsi87"):
