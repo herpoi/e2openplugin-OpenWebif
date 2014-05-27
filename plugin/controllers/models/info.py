@@ -116,89 +116,15 @@ def getInfo():
 	# TODO: get webif versione somewhere!
 	info = {}
 
-	brand = "Dream Multimedia"
+	brand = "unknown"
 	model = "unknown"
 	chipset = "unknown"
 
-	if fileExists("/etc/.box"):
-		brand = "HDMU"
-		f = open("/etc/.box",'r')
-		model = f.readline().strip().lower()
-		if model.startswith("et"):
-			brand = "Xtrend"
-		elif model.startswith("vu"):
-			brand = "VuPlus"
-		elif model.startswith("gb"):
-			brand = "GigaBlue"
-		elif model.startswith("ufs") or model.startswith("ufc"):
-			brand = "Kathrein"
-			if model in ("ufs910", "ufs922", "ufc960"):
-				chipset = "SH4 @266MHz"
-			else:
-				chipset = "SH4 @450MHz"
-		elif model.startswith("xpeed"):
-			brand = "GoldenInterstar"
-		elif model.startswith("topf"):
-			brand = "Topfield"
-			chipset = "SH4 @266MHz"
-		elif model.startswith("azbox"):
-			brand = "AZBox"
-			f = open("/proc/stb/info/model",'r')
- 			model = f.readline().strip().lower()
- 			f.close()
- 			if model == "me":
-				chipset = "SIGMA 8655"
-	 		elif model == "minime":
-				chipset = "SIGMA 8653"
-	 		else:
-				chipset = "SIGMA 8634"
-		elif model.startswith("spark"):
-			brand = "Fulan"
-			chipset = "SH4 @450MHz"
- 	elif fileExists("/proc/stb/info/boxtype"):
-		brand = "Xtrend"
-		f = open("/proc/stb/info/boxtype",'r')
-		model = f.readline().strip().lower()
-		if model.startswith("et"):
-			brand = "Xtrend"
-		elif model.startswith("ini"):
-			if model.endswith("sv"):
-				brand = "MiracleBox"
-			elif model.endswith("ru"):
-				brand = "Sezam"
-			else:
-				brand = "Venton"
-		elif model.startswith("xp"):
-			brand = "MaxDigital"
-		elif model.startswith("ixuss"):
-			brand = "Medialink"
-			model = model.replace(" ", "")
- 		f.close()
-	elif fileExists("/proc/stb/info/vumodel"):
-		brand = "VuPlus"
-		f = open("/proc/stb/info/vumodel",'r')
- 		model = f.readline().strip().lower()
- 		f.close()
-	elif fileExists("/proc/stb/info/azmodel"):
-		brand = "AZBox"
+	if fileExists("/proc/stb/info/model"):
 		f = open("/proc/stb/info/model",'r')
  		model = f.readline().strip().lower()
  		f.close()
- 		if model == "me":
-			chipset = "SIGMA 8655"
- 		elif model == "minime":
-			chipset = "SIGMA 8653"
- 		else:
-			chipset = "SIGMA 8634"
-	else:
-		f = open("/proc/stb/info/model",'r')
- 		model = f.readline().strip().lower()
- 		f.close()
-	 	if model == "tf7700hdpvr":
- 			brand = "Topfield"
-			model = "TF 7700 HDPVR"
- 			chipset = "SH4 @266MHz"
-	 	elif model == "nbox":
+	 	if model == "nbox":
 			brand = "Advanced Digital Broadcast"
  			chipset = "SH4 @266MHz"
 	 	elif model in ("adb2850", "adb2849"):
